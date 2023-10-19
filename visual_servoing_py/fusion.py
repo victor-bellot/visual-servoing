@@ -41,6 +41,13 @@ if __name__ == '__main__':
     robotIp = "localhost"
     robotPort = 11212
 
+    fps = 6
+    dt_loop = 1. / fps
+
+    fractionMaxSpeed = 0.1
+    deltaAngle = 1.0 * np.pi / 180  # 1 degree
+    names = ["HeadYaw", "HeadPitch"]
+
     if len(sys.argv) == 3:
         robotIp = sys.argv[1]
         robotPort = int(sys.argv[2])
@@ -67,17 +74,12 @@ if __name__ == '__main__':
     # Set your Nao path HERE
     nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
 
-    fps = 6
-    dt_loop = 1. / fps
+    # Send NAO to Pose Init : if it's not standing then standing up
+    postureProxy.goToPosture("StandInit", 0.5)
 
     # allow to stop the motion when losing ground contact, NAO stops walking
     # when lifted  (True is default)
     motionProxy.setMotionConfig([["ENABLE_FOOT_CONTACT_PROTECTION", True]])
-
-    # set camera pose
-    names = ["HeadYaw", "HeadPitch"]
-    fractionMaxSpeed = 0.1
-    deltaAngle = 1.0 * np.pi / 180
 
     # only activate head pitch and yaw servos
     stiffnesses = 1.0
@@ -98,7 +100,7 @@ if __name__ == '__main__':
 
             # Bang Bang
             directions = [sign(ex), sign(ey)]
-        
+
         changes = [deltaAngle * direction for direction in directions]  # delta yaw & delta pitch
         motionProxy.changeAngles(names, changes, fractionMaxSpeed)
 
