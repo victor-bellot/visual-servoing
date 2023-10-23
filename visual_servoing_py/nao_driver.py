@@ -275,8 +275,11 @@ if __name__ == "__main__":
     # virtual NAO on other computer : nao_ip="172.20.22.34", nao_port=11212
     # real NAO Blue : nao_ip="172.20.25.151", nao_port=9559
 
+    cv2.setNumThreads(0)
+    cv2.ocl.setUseOpenCL(False)
     # default virtual NAO on V-REP
-    nao_ip = "localhost"
+    #nao_ip = "localhost"
+    nao_ip = "172.17.0.1"
     nao_port = 11212
 
     # change IP and port with arguments in the command line
@@ -297,6 +300,7 @@ if __name__ == "__main__":
 
     # Important  when using virtual NAO !!! set path to the folder where V-REP stores the camera images
     # nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
+    nao_drv.set_virtual_camera_path("/home/dockeruser/shared/imgs")
 
     fps = 4
     dt_loop = 1. / fps

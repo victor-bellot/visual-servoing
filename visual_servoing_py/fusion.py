@@ -38,7 +38,8 @@ def sign(v):
 
 
 if __name__ == '__main__':
-    robotIp = "localhost"
+    # robotIp = "localhost"
+    robotIp = "172.17.0.1"
     robotPort = 11212
 
     fps = 6
@@ -72,7 +73,8 @@ if __name__ == '__main__':
     nao_drv = NaoDriver(nao_ip=robotIp, nao_port=robotPort)
 
     # Set your Nao path HERE
-    nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
+    # nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
+    nao_drv.set_virtual_camera_path("/home/dockeruser/shared/imgs")
 
     # Send NAO to Pose Init : if it's not standing then standing up
     postureProxy.goToPosture("StandInit", 0.5)

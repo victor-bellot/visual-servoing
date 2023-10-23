@@ -37,4 +37,5 @@ def get_ball_center(img_path):
 
 
 if __name__ == "__main__":
-    get_ball_center("../../UE52-VS-IK/imgs/naorealimgs/naoreal_0000.png")
+    get_ball_center("../../imgs/naorealimgs/naoreal_0000.png")
+    
