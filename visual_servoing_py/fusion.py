@@ -26,15 +26,21 @@ def detect_ball(image):
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    if len(contours) > 0:
-        ball_contour = max(contours, key=lambda contour: cv2.contourArea(contour))
+    ball_contour = None
+    ball_area = 0.
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        perimeter = cv2.arcLength(contour, True)  # the curve is closed
+
+        if (4. * np.pi * area) / (perimeter ** 2.) > 0.8:  # select circular contour only
+            if area > ball_area:
+                ball_contour = contour
+                ball_area = area
+
+    if ball_contour is not None:
         return True, np.mean(ball_contour[:, :, 0]), np.mean(ball_contour[:, :, 1])
     else:
         return False, None, None
-
-
-def sign(v):
-    return +1 if v > 0 else -1
 
 
 if __name__ == '__main__':
@@ -42,11 +48,11 @@ if __name__ == '__main__':
     robotIp = "172.17.0.1"
     robotPort = 11212
 
-    fps = 6
+    fps = 10.
     dt_loop = 1. / fps
 
     fractionMaxSpeed = 0.1
-    deltaAngle = 1.0 * np.pi / 180  # 1 degree
+    proportionalConstant = dt_loop * np.pi / 1000.  # such as deltaAngle = pixelError * proportionalConstant
     names = ["HeadYaw", "HeadPitch"]
 
     if len(sys.argv) == 3:
@@ -95,15 +101,12 @@ if __name__ == '__main__':
         ball_detected, bx, by = detect_ball(img)
 
         # Look for the yellow ball
-        directions = [np.random.random(), np.random.random()]
+        changes = [np.random.random() - 0.5 for _ in range(2)]
         if ball_detected:
             ex = (nx / 2) - bx
             ey = by - (ny / 2)
+            changes = [proportionalConstant * ex, proportionalConstant * ey]
 
-            # Bang Bang
-            directions = [sign(ex), sign(ey)]
-
-        changes = [deltaAngle * direction for direction in directions]  # delta yaw & delta pitch
         motionProxy.changeAngles(names, changes, fractionMaxSpeed)
 
         dt = dt_loop - (time.time() - t0_loop)
