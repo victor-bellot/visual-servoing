@@ -9,14 +9,6 @@ from nao_driver import NaoDriver
 
 
 def celebration_arms():
-    # Wake up robot
-    motionProxy.wakeUp()
-
-    # Send robot to Stand Init
-    postureProxy.goToPosture("StandInit", 0.5)
-
-    # end go to Stand Init, begin initialize whole body
-
     # Enable Whole Body Balancer
     isEnabled = True
     motionProxy.wbEnable(isEnabled)
@@ -95,6 +87,10 @@ def celebration_arms():
 
 
 def celebration_torso():
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4375a2f3713dbc00a0322ba68224ac13f618235a
     useSensorValues = False
 
     # Torso Motion
@@ -158,16 +154,30 @@ if __name__ == '__main__':
     motionProxy = ALProxy("ALMotion", robotIp, robotPort)
     postureProxy = ALProxy("ALRobotPosture", robotIp, robotPort)
 
-    celebration_arms()
+    # Wake up robot
+    motionProxy.wakeUp()
 
+<<<<<<< HEAD
     # Deactivate whole body
     # isEnabled    = False
     # motionProxy.wbEnable(isEnabled)
     # Send robot to Pose Init
     # postureProxy.goToPosture("StandInit", 0.3)
+=======
+    # Send robot to Stand Init
+    postureProxy.goToPosture("StandInit", 0.5)
+>>>>>>> 4375a2f3713dbc00a0322ba68224ac13f618235a
 
+    celebration_arms()
+    time.sleep(5)
     celebration_torso()
 
+<<<<<<< HEAD
+=======
+    # Deactivate whole body
+    isEnabled    = False
+    motionProxy.wbEnable(isEnabled)
+>>>>>>> 4375a2f3713dbc00a0322ba68224ac13f618235a
     # Go to rest position
     motionProxy.rest()
 
