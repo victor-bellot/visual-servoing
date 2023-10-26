@@ -114,10 +114,10 @@ class NaoDriver:
             exit(1)
 
     def set_nao_at_rest(self):
-        """ Set NAO in a safe (rest) position : no current in servos, crouch posture """
+        """ Set NAO in a safe (rest) position : no current in servos, straight posture """
         stiffnesses = 1.0
         self.motion_proxy.wakeUp()
-        self.posture_proxy.goToPosture("Crouch", 0.5)
+        self.posture_proxy.goToPosture("Straight", 0.5)
         # relax all servos by removing current (prevent over heating)
         stiffnesses = 0.0
         self.motion_proxy.setStiffnesses(["Body"], stiffnesses)
