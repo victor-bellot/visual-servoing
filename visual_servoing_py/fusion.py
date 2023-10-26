@@ -52,7 +52,7 @@ if __name__ == '__main__':
     dt_loop = 1. / fps
 
     fractionMaxSpeed = 0.1
-    proportionalConstant = dt_loop * np.pi / 1000.  # such as deltaAngle = pixelError * proportionalConstant
+    proportionalConstant = dt_loop * np.pi / 256  # such as deltaAngle = pixelError * proportionalConstant
     names = ["HeadYaw", "HeadPitch"]
 
     if len(sys.argv) == 3:
@@ -108,6 +108,14 @@ if __name__ == '__main__':
             changes = [proportionalConstant * ex, proportionalConstant * ey]
 
         motionProxy.changeAngles(names, changes, fractionMaxSpeed)
+        
+        # tends to align body with head
+        yaw_head, _ = motionProxy.getAngles(names, True)
+        print(yaw_head / np.pi * 180)
+        theta = max(min(yaw_head, 1), -1)
+        x, y = 0, 0
+        freq = 1.
+        motionProxy.moveToward(x, y, theta, [["Frequency", freq]])
 
         dt = dt_loop - (time.time() - t0_loop)
         if dt > 0:
