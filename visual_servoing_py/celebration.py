@@ -9,6 +9,8 @@ from nao_driver import NaoDriver
 
 
 def celebration_arms():
+    print("arms")
+
     # Enable Whole Body Balancer
     isEnabled = True
     motionProxy.wbEnable(isEnabled)
@@ -27,10 +29,10 @@ def celebration_arms():
 
     useSensorValues = False
 
+    frame = motion.FRAME_ROBOT
+
     # Arms motion
     effectorList = ["LArm", "RArm"]
-
-    frame = motion.FRAME_ROBOT
 
     # pathLArm
     pathLArm = []
@@ -81,22 +83,36 @@ def celebration_arms():
                  [coef * (i + 1) for i in range(6)]]  # for "RArm" in seconds
 
     # called cartesian interpolation
-    motionProxy.transformInterpolations(effectorList, frame, pathList, axisMaskList, timesList)
+    motionProxy.transformInterpolations(
+        effectorList, frame, pathList, axisMaskList, timesList)
 
     # end define arms motions, define torso motion
 
 
 def celebration_torso():
-<<<<<<< HEAD
-=======
+    print("torso")
 
->>>>>>> 4375a2f3713dbc00a0322ba68224ac13f618235a
+    # Enable Whole Body Balancer
+    isEnabled = True
+    motionProxy.wbEnable(isEnabled)
+
+    # Legs are constrained fixed
+    stateName = "Fixed"
+    supportLeg = "Legs"
+    motionProxy.wbFootState(stateName, supportLeg)
+
+    # Constraint Balance Motion
+    isEnable = True
+    supportLeg = "Legs"
+    motionProxy.wbEnableBalanceConstraint(isEnable, supportLeg)
+
+    # end initialize whole body, define arms motions
     useSensorValues = False
+
+    frame = motion.FRAME_ROBOT
 
     # Torso Motion
     effectorList = ["Torso", "LArm", "RArm"]
-
-    frame = motion.FRAME_ROBOT
 
     dy = 0.06
     dz = 0.06
@@ -139,6 +155,37 @@ def celebration_torso():
     motionProxy.transformInterpolations(
         effectorList, frame, pathList, axisMaskList, timesList)
 
+def celebration_dab(side="L"):
+    print("dab")
+
+    right_arm_angles = [0.0, -0.7, 1.5, 0.2, 0.5, 0.0]
+    dab_angles = {
+        "HeadYaw": 0.5 * (2 * (side=="L") - 1),
+        "HeadPitch": 0.5,
+        "LShoulderPitch": 0.5 * (side=="L"),
+        "LShoulderRoll": 1.5 - 2 * (side=="R"),
+        "LElbowYaw": 0.0,
+        "LElbowRoll": -2.0 * (side=="R"),
+        "LWristYaw": 0.0,
+        "RShoulderPitch": 0.5 * (side=="R"),
+        "RShoulderRoll": 0.5 - 2 * (side=="R"),
+        "RElbowYaw": 0.0,
+        "RElbowRoll": 2.0 * (side=="L"),
+        "RWristYaw": 0.0,
+    }
+
+    # time_to_reach = 2.0
+    fractionMaxSpeed = 0.5
+
+    # Execution du mouvement
+    motionProxy.setAngles(list(dab_angles.keys()),
+                          list(dab_angles.values()),
+                          fractionMaxSpeed)
+    # motionProxy.angleInterpolationWithSpeed("RArm", dab_angles, fractionMaxSpeed)
+
+    # Attente du mouvement
+    motionProxy.waitUntilMoveIsFinished()
+
 
 if __name__ == '__main__':
     # robotIp = "localhost"
@@ -157,27 +204,20 @@ if __name__ == '__main__':
     # Wake up robot
     motionProxy.wakeUp()
 
-<<<<<<< HEAD
-    # Deactivate whole body
-    # isEnabled    = False
-    # motionProxy.wbEnable(isEnabled)
-    # Send robot to Pose Init
-    # postureProxy.goToPosture("StandInit", 0.3)
-=======
-    # Send robot to Stand Init
-    postureProxy.goToPosture("StandInit", 0.5)
->>>>>>> 4375a2f3713dbc00a0322ba68224ac13f618235a
+    postureProxy.goToPosture("StandInit", 1.)
 
-    celebration_arms()
-    time.sleep(5)
+    celebration_dab("L")
+    time.sleep(1)
+    celebration_dab("R")
+    time.sleep(1)
+    postureProxy.goToPosture("StandInit", 1.)
     celebration_torso()
+    postureProxy.goToPosture("StandInit", 1.)
+    celebration_arms()
 
-<<<<<<< HEAD
-=======
     # Deactivate whole body
-    isEnabled    = False
+    isEnabled = False
     motionProxy.wbEnable(isEnabled)
->>>>>>> 4375a2f3713dbc00a0322ba68224ac13f618235a
     # Go to rest position
     motionProxy.rest()
 
