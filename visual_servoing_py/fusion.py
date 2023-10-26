@@ -12,8 +12,8 @@ def detect_ball(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # Define the lower and upper HSV range for yellow
-    lower_yellow = np.array([20, 100, 100])
-    upper_yellow = np.array([30, 255, 255])
+    lower_yellow = np.array([15, 100, 32])  # sim : 20 100 100
+    upper_yellow = np.array([27, 255, 255])  # sim : 30 255 255
 
     # Create a mask to isolate yellow regions
     mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
@@ -26,19 +26,14 @@ def detect_ball(image):
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    ball_contour = None
-    ball_area = 0.
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        perimeter = cv2.arcLength(contour, True)  # the curve is closed
+    if len(contours) > 0:
+        ball_contour = max(contours, key=lambda contour: cv2.contourArea(contour))
 
-        if (4. * np.pi * area) / (perimeter ** 2.) > 0.8:  # select circular contour only
-            if area > ball_area:
-                ball_contour = contour
-                ball_area = area
-
-    if ball_contour is not None:
-        return True, np.mean(ball_contour[:, :, 0]), np.mean(ball_contour[:, :, 1])
+        perimeter = cv2.arcLength(ball_contour, True)
+        print("Radius estimate:", perimeter / (2 * np.pi))
+        # To compare with sqrt(area)
+        
+        return True, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
     else:
         return False, None, None
 
