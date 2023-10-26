@@ -158,7 +158,6 @@ def celebration_torso():
 def celebration_dab(side="L"):
     print("dab")
 
-    right_arm_angles = [0.0, -0.7, 1.5, 0.2, 0.5, 0.0]
     dab_angles = {
         "HeadYaw": 0.5 * (2 * (side=="L") - 1),
         "HeadPitch": 0.5,
@@ -174,16 +173,11 @@ def celebration_dab(side="L"):
         "RWristYaw": 0.0,
     }
 
-    # time_to_reach = 2.0
     fractionMaxSpeed = 0.5
-
-    # Execution du mouvement
     motionProxy.setAngles(list(dab_angles.keys()),
                           list(dab_angles.values()),
                           fractionMaxSpeed)
-    # motionProxy.angleInterpolationWithSpeed("RArm", dab_angles, fractionMaxSpeed)
 
-    # Attente du mouvement
     motionProxy.waitUntilMoveIsFinished()
 
 
@@ -191,12 +185,6 @@ if __name__ == '__main__':
     # robotIp = "localhost"
     robotIp = "172.17.0.1"
     robotPort = 11212
-
-    '''
-        Example of a whole body multiple effectors control "LArm", "RArm" and "Torso"
-        Warning: Needs a PoseInit before executing
-                 Whole body balancer must be inactivated at the end of the script
-    '''
 
     motionProxy = ALProxy("ALMotion", robotIp, robotPort)
     postureProxy = ALProxy("ALRobotPosture", robotIp, robotPort)
