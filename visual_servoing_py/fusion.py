@@ -31,7 +31,7 @@ def detect_ball(image):
 
         perimeter = cv2.arcLength(ball_contour, True)
         print("Radius estimate:", perimeter / (2 * np.pi))
-        # To compare with sqrt(area)
+        print("Area estimate:", np.sqrt(cv2.contourArea(ball_contour)))
         
         return True, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
     else:
