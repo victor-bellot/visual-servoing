@@ -38,6 +38,7 @@ def detect_ball(image):
         return False, None, None
 
 
+
 if __name__ == '__main__':
     # robotIp = "localhost"
     robotIp = "172.17.0.1"
@@ -96,17 +97,16 @@ if __name__ == '__main__':
         ball_detected, bx, by = detect_ball(img)
 
         # Look for the yellow ball
-        changes = [np.random.random() - 0.5 for _ in range(2)]
         if ball_detected:
             ex = (nx / 2) - bx
             ey = by - (ny / 2)
             changes = [proportionalConstant * ex, proportionalConstant * ey]
-
+        else :
+            changes = [np.sign(ex) * 0.1, max(0, np.random.random() - 0.5)]
         motionProxy.changeAngles(names, changes, fractionMaxSpeed)
         
         # tends to align body with head
         yaw_head, _ = motionProxy.getAngles(names, True)
-        print(yaw_head / np.pi * 180)
         theta = max(min(yaw_head, 1), -1)
         x, y = 0, 0
         freq = 1.
