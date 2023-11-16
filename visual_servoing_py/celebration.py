@@ -155,6 +155,7 @@ def celebration_torso():
     motionProxy.transformInterpolations(
         effectorList, frame, pathList, axisMaskList, timesList)
 
+
 def celebration_dab(side="L"):
     print("dab")
 
@@ -182,8 +183,8 @@ def celebration_dab(side="L"):
 
 
 if __name__ == '__main__':
-    # robotIp = "localhost"
-    robotIp = "172.17.0.1"
+    robotIp = "localhost"
+    # robotIp = "172.17.0.1"
     robotPort = 11212
 
     motionProxy = ALProxy("ALMotion", robotIp, robotPort)

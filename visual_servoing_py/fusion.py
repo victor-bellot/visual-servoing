@@ -38,10 +38,19 @@ def detect_ball(image):
         return False, None, None
 
 
-
 if __name__ == '__main__':
-    # robotIp = "localhost"
-    robotIp = "172.17.0.1"
+    if len(sys.argv) > 1:
+        user = sys.argv[1]
+    else:
+        user = 'nao'
+
+    if user in 'etienne':
+        robotIp = "172.17.0.1"
+    elif user in 'victor':
+        robotIp = "localhost"
+    else:
+        robotIp = ""
+
     robotPort = 11212
 
     fps = 10.
@@ -75,8 +84,12 @@ if __name__ == '__main__':
     nao_drv = NaoDriver(nao_ip=robotIp, nao_port=robotPort)
 
     # Set your Nao path HERE
-    # nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
-    nao_drv.set_virtual_camera_path("/home/dockeruser/shared/imgs")
+    if user in 'etienne':
+        nao_drv.set_virtual_camera_path("/home/dockeruser/shared/imgs")
+    elif user in 'victor':
+        nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
+    else:
+        pass
 
     # Send NAO to Pose Init : if it's not standing then standing up
     postureProxy.goToPosture("StandInit", 0.5)
@@ -88,6 +101,9 @@ if __name__ == '__main__':
     # only activate head pitch and yaw servos
     stiffnesses = 1.0
     motionProxy.setStiffnesses(names, stiffnesses)
+
+    # Initialize yaw error (used to memorize where the ball is going)
+    ex = 0
 
     # infinite test loop, stops with Ctrl-C
     while True:
