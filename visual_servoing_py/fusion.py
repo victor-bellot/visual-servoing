@@ -31,16 +31,15 @@ def detect_ball(image):
 
     if len(contours) > 0:
         ball_contour = max(contours, key=lambda contour: cv2.contourArea(contour))
-
         perimeter = cv2.arcLength(ball_contour, True)
         
-        # Ball radius estimate
-        print("Radius estimate from perimeter:", perimeter / (2 * np.pi))
-        print("Radius estimate from area:", np.sqrt(cv2.contourArea(ball_contour) / np.pi))
+        # Ball distance estimate
+        d_perimeter = r_to_d / (perimeter / (2 * np.pi))
+        d_area = r_to_d / np.sqrt(cv2.contourArea(ball_contour) / np.pi)
         
-        return True, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
+        return d_area, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
     else:
-        return False, None, None
+        return -1, None, None
 
 
 if __name__ == '__main__':
@@ -66,9 +65,10 @@ if __name__ == '__main__':
 
     body_proportional_constant = 1.0
     body_step_frequency = 1.0  # maximum step frequency
-    body_head_min_error = np.pi / 6  # in radians
+    body_head_min_error = np.pi / 20  # in radians
 
     names = ["HeadYaw", "HeadPitch"]
+    r_to_d = 5.0
 
     if len(sys.argv) == 3:
         robotIp = sys.argv[1]
@@ -130,16 +130,19 @@ if __name__ == '__main__':
 
         # get image and detect ball
         img_ok, img, nx, ny = nao_drv.get_image()
-        ball_detected, bx, by = detect_ball(img)
+        ball_distance, bx, by = detect_ball(img)
 
         # Look for the yellow ball
-        if ball_detected:
+        if ball_distance > 0:
+            print("Estimated ball distance :", ball_distance)
             ex = (nx / 2) - bx
             ey = by - (ny / 2)
             changes = [head_proportional_constant * ex, head_proportional_constant * ey]
         else:
             print("No ball detected...")
             changes = [np.sign(ex) * 0.1, max(0, np.random.random() - 0.5)]
+        
+        # changes[0] -= d_yaw_factor  # need to be tuned
         motionProxy.changeAngles(names, changes, head_fraction_max_speed)
 
         dt = dt_loop - (time.time() - t0_loop)
