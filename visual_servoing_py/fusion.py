@@ -7,7 +7,7 @@ import numpy as np
 from nao_driver import NaoDriver
 
 
-def detect_ball(image):
+def detect_ball(image, verbose=True):
     # Convert the image to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -35,12 +35,31 @@ def detect_ball(image):
         perimeter = cv2.arcLength(ball_contour, True)
         
         # Ball radius estimate
-        print("Radius estimate from perimeter:", perimeter / (2 * np.pi))
-        print("Radius estimate from area:", np.sqrt(cv2.contourArea(ball_contour) / np.pi))
+        if verbose:
+            print("Radius estimate from perimeter:", perimeter / (2 * np.pi))
+            print("Radius estimate from area:", np.sqrt(cv2.contourArea(ball_contour) / np.pi))
         
         return True, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
     else:
         return False, None, None
+
+
+def detect_goal(image):
+    # Convert the image to HSV color space
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Define the lower and upper HSV range for yellow
+    lower_red = np.array([0, 100, 100])  # sim : 20 100 100
+    upper_red = np.array([10, 255, 255])  # sim : 30 255 255
+
+    # Create a mask to isolate yellow regions
+    mask = cv2.inRange(hsv, lower_red, upper_red)
+
+    if np.sum(mask) == 0:
+        gx, gy = None, None
+    else:
+        gx, gy = np.mean(np.where(mask > 0), axis=1)
+    return True, gx, gy
 
 
 if __name__ == '__main__':
@@ -50,7 +69,7 @@ if __name__ == '__main__':
         user = 'nao'
 
     if user in 'etienne':
-        robotIp = "172.17.0.1"
+        robotIp = "127.0.0.1"
     elif user in 'victor':
         robotIp = "localhost"
     else:
@@ -95,7 +114,7 @@ if __name__ == '__main__':
 
     # Set your Nao path HERE
     if user in 'etienne':
-        nao_drv.set_virtual_camera_path("/home/dockeruser/shared/imgs")
+        nao_drv.set_virtual_camera_path("/home/etrange/Documents/ensta/rob/Semestre5/visual_servoing/UE52-VS-IK/imgs")
     elif user in 'victor':
         nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
     else:
@@ -130,7 +149,9 @@ if __name__ == '__main__':
 
         # get image and detect ball
         img_ok, img, nx, ny = nao_drv.get_image()
-        ball_detected, bx, by = detect_ball(img)
+        ball_detected, bx, by = detect_ball(img, verbose=False)
+        goal_detected, gx, gy = detect_goal(img)
+        print(gx, gy)
 
         # Look for the yellow ball
         if ball_detected:
