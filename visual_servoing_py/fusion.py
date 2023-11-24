@@ -42,10 +42,6 @@ def detect_ball(image):
         return 0.0, None, None
 
 
-def bound(value, ceil=1.0):
-    return max(-ceil, min(value, +ceil))
-
-
 def detect_goal(image):
     # Convert the image to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -58,10 +54,14 @@ def detect_goal(image):
     mask = cv2.inRange(hsv, lower_red, upper_red)
 
     if np.sum(mask) == 0:
-        gx, gy = None, None
+        return False, None, None
     else:
         gx, gy = np.mean(np.where(mask > 0), axis=1)
-    return True, gx, gy
+        return True, gx, gy
+
+
+def bound(value, ceil=1.0):
+    return max(-ceil, min(value, +ceil))
 
 
 if __name__ == '__main__':
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         user = 'nao'
 
     if user in 'etienne':
-        robotIp = "127.0.0.1"
+        robotIp = "172.17.0.1"
     elif user in 'victor':
         robotIp = "localhost"
     else:
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     # Set your Nao path HERE
     if user in 'etienne':
-        nao_drv.set_virtual_camera_path("/home/etrange/Documents/ensta/rob/Semestre5/visual_servoing/UE52-VS-IK/imgs")
+        nao_drv.set_virtual_camera_path("/home/dockeruser/shared/imgs")
     elif user in 'victor':
         nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
     else:
@@ -151,7 +151,6 @@ if __name__ == '__main__':
         img_ok, img, nx, ny = nao_drv.get_image()
         ball_distance, bx, by = detect_ball(img)
         goal_detected, gx, gy = detect_goal(img)
-        print(gx, gy)
 
         # Look for the yellow ball
         if ball_distance > 0:
