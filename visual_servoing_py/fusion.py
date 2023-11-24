@@ -7,7 +7,7 @@ import numpy as np
 from nao_driver import NaoDriver
 
 
-def detect_ball(image, verbose=True):
+def detect_ball(image):
     # Convert the image to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -31,17 +31,19 @@ def detect_ball(image, verbose=True):
 
     if len(contours) > 0:
         ball_contour = max(contours, key=lambda contour: cv2.contourArea(contour))
-
         perimeter = cv2.arcLength(ball_contour, True)
         
-        # Ball radius estimate
-        if verbose:
-            print("Radius estimate from perimeter:", perimeter / (2 * np.pi))
-            print("Radius estimate from area:", np.sqrt(cv2.contourArea(ball_contour) / np.pi))
+        # Ball distance estimate
+        d_perimeter = r_to_d / (perimeter / (2 * np.pi))
+        d_area = r_to_d / np.sqrt(cv2.contourArea(ball_contour) / np.pi)
         
-        return True, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
+        return d_area, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
     else:
-        return False, None, None
+        return 0.0, None, None
+
+
+def bound(value, ceil=1.0):
+    return max(-ceil, min(value, +ceil))
 
 
 def detect_goal(image):
@@ -85,9 +87,16 @@ if __name__ == '__main__':
 
     body_proportional_constant = 1.0
     body_step_frequency = 1.0  # maximum step frequency
-    body_head_min_error = np.pi / 6  # in radians
+    body_head_min_error = np.pi / 16  # in radians
+
+    desired_dist_to_ball = 0.6
+    dist_ball_min_error = 0.05
+    walk_proportional_constant = 3.0
+
+    exploration_speed_factor = 1.0  # maximum speed factor
 
     names = ["HeadYaw", "HeadPitch"]
+    r_to_d = 16.0
 
     if len(sys.argv) == 3:
         robotIp = sys.argv[1]
@@ -138,30 +147,37 @@ if __name__ == '__main__':
     while True:
         t0_loop = time.time()
 
-        # tends to align body with head
-        yaw_head, _ = motionProxy.getAngles(names, True)  # assuming between -pi and +pi
-
-        dx_factor = 0.0
-        dy_factor = 0.0
-        d_yaw_factor = max(min(body_proportional_constant * yaw_head, 1), -1) if abs(yaw_head) > body_head_min_error else 0.0
-
-        motionProxy.moveToward(dx_factor, dy_factor, d_yaw_factor, [["Frequency", body_step_frequency]])
-
         # get image and detect ball
         img_ok, img, nx, ny = nao_drv.get_image()
-        ball_detected, bx, by = detect_ball(img, verbose=False)
+        ball_distance, bx, by = detect_ball(img)
         goal_detected, gx, gy = detect_goal(img)
         print(gx, gy)
 
         # Look for the yellow ball
-        if ball_detected:
+        if ball_distance > 0:
+            print("Ball distance estimation :", ball_distance)
             ex = (nx / 2) - bx
             ey = by - (ny / 2)
             changes = [head_proportional_constant * ex, head_proportional_constant * ey]
         else:
             print("No ball detected...")
             changes = [np.sign(ex) * 0.1, max(0, np.random.random() - 0.5)]
+
+        # tends to align body with head
+        yaw_head, _ = motionProxy.getAngles(names, True)  # assuming between -pi and +pi
+        d_dist = ball_distance - desired_dist_to_ball
+
+        # Maybe we need a Finite State Machine
+        dx_factor = bound(walk_proportional_constant * d_dist) if abs(d_dist) > dist_ball_min_error else 0.0
+        dy_factor = exploration_speed_factor if abs(d_dist) < dist_ball_min_error else 0.0
+        d_yaw_factor = bound(body_proportional_constant * yaw_head) if abs(yaw_head) > body_head_min_error else 0.0
+
+        # require some tuning...
+        # changes[0] -= d_yaw_factor
+
+        # Let's move!
         motionProxy.changeAngles(names, changes, head_fraction_max_speed)
+        motionProxy.moveToward(dx_factor, dy_factor, d_yaw_factor, [["Frequency", body_step_frequency]])
 
         dt = dt_loop - (time.time() - t0_loop)
         if dt > 0:
