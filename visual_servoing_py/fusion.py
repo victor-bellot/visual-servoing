@@ -7,6 +7,10 @@ import numpy as np
 from nao_driver import NaoDriver
 
 
+def contour_center(contour):
+    return np.mean(contour[:, :, 0]), np.mean(contour[:, :, 1])
+
+
 def detect_ball(image):
     # Convert the image to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -21,7 +25,7 @@ def detect_ball(image):
     # Create a mask to isolate yellow regions
     mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
 
-    # Apply morphological operations to clean up the mask (optional)
+    # Apply morphological operations to clean up the mask
     kernel = np.ones((5, 5), np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
@@ -36,14 +40,59 @@ def detect_ball(image):
         # Ball distance estimate
         d_perimeter = r_to_d / (perimeter / (2 * np.pi))
         d_area = r_to_d / np.sqrt(cv2.contourArea(ball_contour) / np.pi)
+
+        cx, cy = contour_center(ball_contour)
         
-        return d_area, np.mean(ball_contour[:, :, 0], dtype=int), np.mean(ball_contour[:, :, 1], dtype=int)
+        return d_area, int(cx), int(cy)  # return distance_to_ball, x & y components of the ball's center in pixels
     else:
         return 0.0, None, None
 
 
+def detect_goal(image):
+    # Convert the image to HSV color space
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Define the lower and upper HSV range for red
+    lower_red = np.array([0, 100, 100])  # sim
+    upper_red = np.array([10, 255, 255])  # sim
+
+    # lower_red = np.array([0, 100, 32])  # real
+    # upper_red = np.array([10, 255, 255])  # real
+
+    # Create a mask to isolate yellow regions
+    mask = cv2.inRange(hsv, lower_red, upper_red)
+
+    # Apply morphological operations to clean up the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    n_contour = len(contours)
+    if n_contour > 0:
+        bx, by = 0.0, 0.0
+
+        for contour in contours:
+            cx, cy = contour_center(contour)
+
+            bx += cx
+            by += cy
+
+        return True, int(bx / n_contour), int(by / n_contour) 
+    else:
+        return False, None, None
+
+
 def bound(value, ceil=1.0):
     return max(-ceil, min(value, +ceil))
+
+
+def changes_from_pixel(px, py):
+    ex = (width / 2) - px
+    ey = py - (height / 2)
+    return [head_proportional_constant * ex, head_proportional_constant * ey]
 
 
 if __name__ == '__main__':
@@ -75,7 +124,8 @@ if __name__ == '__main__':
     dist_ball_min_error = 0.05
     walk_proportional_constant = 3.0
 
-    exploration_speed_factor = 1.0  # maximum speed factor
+    walking_search_factor = 1.0  # maximum speed factor
+    head_turning_search_factor = 0.1
 
     names = ["HeadYaw", "HeadPitch"]
     r_to_d = 16.0
@@ -129,19 +179,25 @@ if __name__ == '__main__':
     while True:
         t0_loop = time.time()
 
-        # get image and detect ball
-        img_ok, img, nx, ny = nao_drv.get_image()
+        # get image and detect the ball and the goal
+        img_ok, img, width, height = nao_drv.get_image()
         ball_distance, bx, by = detect_ball(img)
+        goal_detected, gx, gy = detect_goal(img)
 
         # Look for the yellow ball
         if ball_distance > 0:
             print("Ball distance estimation :", ball_distance)
-            ex = (nx / 2) - bx
-            ey = by - (ny / 2)
-            changes = [head_proportional_constant * ex, head_proportional_constant * ey]
+            head_ball_changes = changes_from_pixel(bx, by)
         else:
             print("No ball detected...")
-            changes = [np.sign(ex) * 0.1, max(0, np.random.random() - 0.5)]
+            head_ball_changes = [np.sign(ex) * head_turning_search_factor, max(0, np.random.random() - 0.5)]
+        
+        # Look for the red goal
+        if goal_detected:
+            head_goal_changes = changes_from_pixel(gx, gy)
+        else:
+            print("No goal detected...")
+            head_goal_changes = [0.0, 0.0]
 
         # tends to align body with head
         yaw_head, _ = motionProxy.getAngles(names, True)  # assuming between -pi and +pi
@@ -149,11 +205,12 @@ if __name__ == '__main__':
 
         # Maybe we need a Finite State Machine
         dx_factor = bound(walk_proportional_constant * d_dist) if abs(d_dist) > dist_ball_min_error else 0.0
-        dy_factor = exploration_speed_factor if abs(d_dist) < dist_ball_min_error else 0.0
+        dy_factor = walking_search_factor if abs(d_dist) < dist_ball_min_error else 0.0
         d_yaw_factor = bound(body_proportional_constant * yaw_head) if abs(yaw_head) > body_head_min_error else 0.0
 
         # require some tuning...
         # changes[0] -= d_yaw_factor
+        changes = [b_change + g_change for (b_change, g_change) in zip(head_ball_changes, head_goal_changes)]
 
         # Let's move!
         motionProxy.changeAngles(names, changes, head_fraction_max_speed)
