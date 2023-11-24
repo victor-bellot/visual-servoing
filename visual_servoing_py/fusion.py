@@ -46,18 +46,17 @@ def detect_goal(image):
     # Convert the image to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # Define the lower and upper HSV range for yellow
-    lower_red = np.array([0, 100, 100])  # sim : 20 100 100
-    upper_red = np.array([10, 255, 255])  # sim : 30 255 255
+    # Define the lower and upper HSV range for red
+    lower_red = np.array([0, 100, 100])
+    upper_red = np.array([10, 255, 255])
 
-    # Create a mask to isolate yellow regions
+    # Create a mask to isolate red regions
     mask = cv2.inRange(hsv, lower_red, upper_red)
 
-    if np.sum(mask) == 0:
-        return False, None, None
-    else:
+    if np.any(mask > 0):
         gx, gy = np.mean(np.where(mask > 0), axis=1)
         return True, gx, gy
+    return False, None, None
 
 
 def bound(value, ceil=1.0):
