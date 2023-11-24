@@ -53,36 +53,16 @@ def detect_goal(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # Define the lower and upper HSV range for red
-    lower_red = np.array([0, 100, 100])  # sim
-    upper_red = np.array([10, 255, 255])  # sim
+    lower_red = np.array([0, 100, 100])
+    upper_red = np.array([10, 255, 255])
 
-    # lower_red = np.array([0, 100, 32])  # real
-    # upper_red = np.array([10, 255, 255])  # real
-
-    # Create a mask to isolate yellow regions
+    # Create a mask to isolate red regions
     mask = cv2.inRange(hsv, lower_red, upper_red)
 
-    # Apply morphological operations to clean up the mask
-    kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-    # Find contours in the mask
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    n_contour = len(contours)
-    if n_contour > 0:
-        bx, by = 0.0, 0.0
-
-        for contour in contours:
-            cx, cy = contour_center(contour)
-
-            bx += cx
-            by += cy
-
-        return True, int(bx / n_contour), int(by / n_contour) 
-    else:
-        return False, None, None
+    if np.any(mask > 0):
+        gx, gy = np.mean(np.where(mask > 0), axis=1)
+        return True, gx, gy
+    return False, None, None
 
 
 def bound(value, ceil=1.0):
