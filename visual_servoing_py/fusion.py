@@ -186,10 +186,10 @@ if __name__ == '__main__':
         d_dist = ball_distance - desired_dist_to_ball
 
         # alignment between ball and goal
+        print(abs(head_ball_changes[1] - head_goal_changes[1]))
         is_aligned = ball_distance > 0 \
                     and goal_detected \
                     and abs(head_ball_changes[1] - head_goal_changes[1]) < np.pi / 32  # error min = 5 degres
-        
 
         if not is_aligned:
             # Maybe we need a Finite State Machine
