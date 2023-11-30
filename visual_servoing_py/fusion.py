@@ -94,6 +94,8 @@ if __name__ == '__main__':
     dt_loop = 1. / fps
 
     head_fraction_max_speed = 0.1
+    # search for fov yaw : head_proportional_constant_yaw = dt_loop * fov_yaw / width(=320)
+    # idem for pitch
     head_proportional_constant = dt_loop * np.pi / 256  # such as deltaAngle = pixelError * proportionalConstant
 
     body_proportional_constant = 1.0
@@ -166,11 +168,11 @@ if __name__ == '__main__':
 
         # Look for the yellow ball
         if ball_distance > 0:
-            print("Ball distance estimation :", ball_distance)
+            # print("Ball distance estimation :", ball_distance)
             head_ball_changes = changes_from_pixel(bx, by)
         else:
-            print("No ball detected...")
-            head_ball_changes = [np.sign(ex) * head_turning_search_factor, max(0, np.random.random() - 0.5)]
+            # print("No ball detected...")
+            head_ball_changes = [np.sign(ex) * head_turning_search_factor, max(0, np.random.random() - 0.5)]  # ?
         
         # Look for the red goal
         if goal_detected:
@@ -183,20 +185,28 @@ if __name__ == '__main__':
         yaw_head, _ = motionProxy.getAngles(names, True)  # assuming between -pi and +pi
         d_dist = ball_distance - desired_dist_to_ball
 
-        # alignment error between ball and goal
-        err_align = float('inf')
-        if gy != None:
-            err_align = gy - by
-            print(abs(err_align))
+        # alignment between ball and goal
+        is_aligned = ball_distance > 0 \
+                    and goal_detected \
+                    and abs(head_ball_changes[1] - head_goal_changes[1]) < np.pi / 32  # error min = 5 degres
+        
 
-        # Maybe we need a Finite State Machine
-        dx_factor = bound(walk_proportional_constant * d_dist) if abs(d_dist) > dist_ball_min_error else 0.0
-        dy_factor = walking_search_factor if abs(d_dist) < dist_ball_min_error and err_align > 10  else 0.0
-        d_yaw_factor = bound(body_proportional_constant * yaw_head) if abs(yaw_head) > body_head_min_error else 0.0
+        if not is_aligned:
+            # Maybe we need a Finite State Machine
+            dx_factor = bound(walk_proportional_constant * d_dist) if abs(d_dist) > dist_ball_min_error else 0.0
+            dy_factor = walking_search_factor if abs(d_dist) < dist_ball_min_error else 0.0
+            d_yaw_factor = bound(body_proportional_constant * yaw_head) if abs(yaw_head) > body_head_min_error else 0.0
 
-        # require some tuning...
-        # changes[0] -= d_yaw_factor
-        changes = [b_change + g_change for (b_change, g_change) in zip(head_ball_changes, head_goal_changes)]
+            # require some tuning...
+            # changes[0] -= d_yaw_factor
+            changes = [b_change + g_change for (b_change, g_change) in zip(head_ball_changes, head_goal_changes)]
+
+        else:
+            dx_factor = 1.0
+            dy_factor = 0.0
+            d_yaw_factor = 0.0
+
+            changes = [0., 0.]
 
         # Let's move!
         motionProxy.changeAngles(names, changes, head_fraction_max_speed)
