@@ -70,7 +70,7 @@ if __name__ == '__main__':
         user = 'nao'
 
     if user in 'etienne':
-        robotIp = "172.17.0.1"
+        robotIp = "localhost"
     elif user in 'victor':
         robotIp = "localhost"
     else:
@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
     # Set your Nao path HERE
     if user in 'etienne':
-        nao_drv.set_virtual_camera_path("/home/dockeruser/shared/imgs")
+        nao_drv.set_virtual_camera_path("/home/etrange/Documents/ensta/rob/Semestre5/visual_servoing/UE52-VS-IK/imgs")
     elif user in 'victor':
         nao_drv.set_virtual_camera_path("/home/victor/nao/UE52-VS-IK/imgs")
     else:
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     while True:
         t0_loop = time.time()
 
-        # get image and detect ball
+        # get image and detect ball and goal
         img_ok, img, nx, ny = nao_drv.get_image()
         ball_distance, bx, by = detect_ball(img)
         goal_detected, gx, gy = detect_goal(img)
@@ -165,9 +165,15 @@ if __name__ == '__main__':
         yaw_head, _ = motionProxy.getAngles(names, True)  # assuming between -pi and +pi
         d_dist = ball_distance - desired_dist_to_ball
 
+        # alignment error between ball and goal
+        err_align = float('inf')
+        if gy != None:
+            err_align = gy - by
+            print(abs(err_align))
+
         # Maybe we need a Finite State Machine
         dx_factor = bound(walk_proportional_constant * d_dist) if abs(d_dist) > dist_ball_min_error else 0.0
-        dy_factor = exploration_speed_factor if abs(d_dist) < dist_ball_min_error else 0.0
+        dy_factor = exploration_speed_factor if abs(d_dist) < dist_ball_min_error and err_align > 10  else 0.0
         d_yaw_factor = bound(body_proportional_constant * yaw_head) if abs(yaw_head) > body_head_min_error else 0.0
 
         # require some tuning...
