@@ -1,0 +1,14 @@
+----- States
+Start
+End
+----- Transitions
+Start End run do_mission
+----- Events
+run
+done
+---- Start State
+Start
+---- Start Event
+run
+---- End State
+End

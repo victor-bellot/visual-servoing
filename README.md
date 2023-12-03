@@ -26,6 +26,8 @@
 - ball_distance -> dx & dy (to get ready for shooting)
 - ball & goal position -> head & body atitude -> coupled by dy
 
-### Using a Finite State Machine (FSM) ???
+### Using a Finite State Machine (FSM)
 
-Yes, please.
+- described in 'fsm_nao_soccer.txt'
+- run using 'run_fsm.py'
+- NaoSoccer's methods in the NaoSoccer class
