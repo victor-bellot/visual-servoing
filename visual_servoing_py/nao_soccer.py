@@ -86,8 +86,11 @@ class NaoSoccer:
 
             # get image and detect the ball and the goal
             img_ok, img, width, height = self.nao_drv.get_image()
-            ball_distance, bx, by = detect_ball(img, self.r_to_d)
+            ball_radius, bx, by = detect_ball(img)
             goal_detected, gx, gy = detect_goal(img)
+
+            # Convert visual ball radius into an distance estimate
+            ball_distance = self.r_to_d / ball_radius if ball_radius else 0.0
 
             # Are the robot's head, its body, the yellow ball and the red goal align ?
             head_body_ball_goal_alignment = True
@@ -95,13 +98,12 @@ class NaoSoccer:
             # Look for the yellow ball
             if ball_distance > 0:
                 # print("Ball distance estimation :", ball_distance)
-                ball_diameter = 2 * (self.r_to_d / ball_distance)
 
                 target_x = width / 2  # center the ball horizontally
-                target_y = height - self.ball_target_security_factor * ball_diameter  # bottom the ball vertically
+                target_y = height - self.ball_target_security_factor * (2 * ball_radius)  # bottom the ball vertically
 
                 head_ball_changes = self.changes_from_pixel(target_x, target_y, bx, by)
-                ball_yaw_error = head_ball_changes[0]
+                self.ball_yaw_error = head_ball_changes[0]
             else:
                 # print("No ball detected...")
                 head_body_ball_goal_alignment = False  # no alignment without a ball
@@ -111,7 +113,7 @@ class NaoSoccer:
             # Look for the red goal corners
             if goal_detected:
                 target_x = width / 2  # center the goal horizontally
-                target_y = 0.  # top the goal vertically
+                target_y = height / 2  # center the goal vertically
                 head_goal_changes = self.changes_from_pixel(target_x, target_y, gx, gy)
             else:
                 # print("No goal detected...")

@@ -1,0 +1,28 @@
+----- States
+Idle
+BallSearcher
+BallReacher
+GoalSearcher
+AlignmentSearcher
+Kicker
+Goal
+----- Transitions
+Idle BallSearcher start do_ball_search
+BallSearcher BallReacher ball_found do_ball_reach
+BallReacher GoalSearcher ball_reached do_goal_search
+GoalSearcher AlignmentSearcher goal_found do_alignment
+AlignmentSearcher Kicker alignment_reached do_kick
+Kicker Goal kick_done do_stop
+----- Events
+start
+ball_found
+ball_reached
+goal_found
+alignment_reached
+kick_done
+---- Start State
+Idle
+---- Start Event
+start
+---- End State
+Goal

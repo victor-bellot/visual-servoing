@@ -9,6 +9,14 @@ def do_mission():
     return 'done'
 
 
+def do_ball_search(): return 'ball_found'
+def do_ball_reach(): return 'ball_reached'
+def do_goal_search(): return 'goal_found'
+def do_alignment(): return 'alignment_reached'
+def do_kick(): return 'kick_done'
+def do_stop(): return
+
+
 if __name__ == "__main__":
     # Get the user's name (if available)
     user = sys.argv[1] if len(sys.argv) > 1 else 'nao'

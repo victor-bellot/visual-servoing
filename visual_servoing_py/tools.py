@@ -6,7 +6,7 @@ def contour_center(contour):
     return np.mean(contour[:, :, 0]), np.mean(contour[:, :, 1])
 
 
-def detect_ball(image, r_to_d, real=False):
+def detect_ball(image, real=False):
     # Convert the image to HSV color space
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -32,15 +32,15 @@ def detect_ball(image, r_to_d, real=False):
     if len(contours) > 0:
         ball_contour = max(contours, key=lambda contour: cv2.contourArea(contour))
 
-        # Ball distance estimation via ball area
+        # Ball radius estimation via ball area
         area = cv2.contourArea(ball_contour)
-        d_area = r_to_d / np.sqrt(area / np.pi)
+        r_ball = np.sqrt(area / np.pi)
 
         cx, cy = contour_center(ball_contour)
 
-        return d_area, int(cx), int(cy)  # return distance_to_ball, x & y components of the ball's center in pixels
+        return r_ball, int(cx), int(cy)  # return distance_to_ball, x & y components of the ball's center in pixels
     else:
-        return 0.0, None, None
+        return None, None, None
 
 
 def detect_goal(image):
