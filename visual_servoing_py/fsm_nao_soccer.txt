@@ -1,14 +1,23 @@
 ----- States
-Start
+Idle
+BallSearch
+BallTrack
 End
 ----- Transitions
-Start End run do_mission
+Idle BallSearch ready do_ball_search
+BallSearch BallSearch ball_not_found do_ball_search
+BallSearch BallTrack ball_found do_ball_track
+BallTrack BallTrack not_looking_at_the_ball do_ball_track
+BallTrack End looking_at_the_ball do_stop
 ----- Events
-run
-done
+ready
+ball_not_found
+ball_found
+not_looking_at_the_ball
+looking_at_the_ball
 ---- Start State
-Start
+Idle
 ---- Start Event
-run
+ready
 ---- End State
 End

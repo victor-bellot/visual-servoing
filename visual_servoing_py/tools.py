@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def contour_center(contour):
+def contour_center(contour):  # list of points (x, y)
     return np.mean(contour[:, :, 0]), np.mean(contour[:, :, 1])
 
 

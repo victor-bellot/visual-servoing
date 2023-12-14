@@ -13,13 +13,10 @@ class NaoSoccer:
 
         print("Initializing a NaoSoccer...")
 
-        fps = 10.
-        self.dt = 1. / fps
-
         # search for fov yaw : head_proportional_constant_yaw = dt_loop * fov_yaw / width(=320)
         # for fov pitch : head_proportional_constant_pitch = dt_loop * fov_pitch / height(=320)
         # such as deltaAngle = pixelError * proportionalConstant
-        self.head_proportional_constant = self.dt * np.pi / 256
+        self.head_proportional_constant = np.pi / 2560
         self.body_proportional_constant = 1.0
         self.walk_proportional_constant = 3.0
 
@@ -35,7 +32,6 @@ class NaoSoccer:
 
         self.desired_dist_to_ball = 0.8
         self.r_to_d = 16.0  # such as ball_distance = r_to_d * visual_ball_radius
-        self.ball_target_security_factor = 1.5  # ensure to have the entire ball in the robot camera vision
 
         self.angle_names = ["HeadYaw", "HeadPitch"]  # angles we want control on
 
@@ -74,12 +70,97 @@ class NaoSoccer:
         # Initialize yaw error (used to memorize where the ball is going)
         self.ball_yaw_error = 0.
 
-    def changes_from_pixel(self, tx, ty, px, py):
-        ex = tx - px
-        ey = py - ty
-        return [self.head_proportional_constant * error for error in (ex, ey)]
+        # Define camera image variables
+        self.image_updated = False
+        self.camera_image = None
+        self.image_dimension = (0, 0)  # (width, height)
 
-    def run(self):
+        # Define ball variables
+        self.ball_updated = False
+        self.ball_radius = None
+        self.ball_position = (0, 0)  # pixel (x, y) on image
+        self.ball_distance = 0
+
+        # Define goal variables
+        self.goal_updated = False
+        self.goal_detected = None
+        self.goal_position = (0, 0)  # pixel (x, y) on image
+
+    def changes_from_pixel(self, tx, ty, px, py):
+        return [self.head_proportional_constant * error for error in (tx - px, py - ty)]
+
+    def reset(self):
+        self.image_updated = False
+        self.ball_updated = False
+        self.goal_updated = False
+
+    """ GETTER METHODS """
+
+    def ball_found(self):
+        if self.update_ball():
+            return self.ball_distance > 0
+        return False
+
+    def get_image_dimension(self):
+        if self.update_image():
+            return self.image_dimension
+
+    def get_ball_radius(self):
+        if self.update_ball():
+            return self.ball_radius
+
+    def get_ball_distance(self):
+        if self.update_ball():
+            return self.ball_distance
+
+    """ UPDATE METHODS """
+
+    def update_image(self):
+        if not self.image_updated:
+            img_ok, img, width, height = self.nao_drv.get_image()
+            if img_ok:
+                self.image_updated = True
+                self.camera_image = img
+                self.image_dimension = (width, height)
+
+        return self.image_updated
+
+    def update_ball(self):
+        if self.update_image() and not self.ball_updated:
+            ball_radius, bx, by = detect_ball(self.image_dimension)
+
+            self.ball_updated = True
+            self.ball_radius = ball_radius
+            self.ball_position = (bx, by)
+
+            # Convert visual ball radius into an distance estimate
+            self.ball_distance = self.r_to_d / ball_radius if ball_radius else 0.0
+
+        return self.ball_updated
+
+    def update_goal(self):
+        if self.update_image() and not self.goal_updated:
+            goal_detected, gx, gy = detect_goal(self.image_dimension)
+
+            self.goal_updated = True
+            self.goal_detected = goal_detected
+            self.goal_position = (gx, gy)
+
+        return self.goal_updated
+
+    """ MOTION METHODS """
+
+    def search_ball(self):
+        head_ball_changes = [np.sign(self.ball_yaw_error) * self.head_turning_search_factor,  # yaw movement
+                             max(0, np.random.random() - 0.5)]  # pitch movement
+        self.motion_proxy.changeAngles(self.angle_names, head_ball_changes, self.head_fraction_max_speed)
+
+    def track_ball(self, target_x, target_y):
+        if self.update_ball():
+            head_ball_changes = self.changes_from_pixel(target_x, target_y, *self.ball_position)
+            self.motion_proxy.changeAngles(self.angle_names, head_ball_changes, self.head_fraction_max_speed)
+
+    def run(self):  # TO BE REMOVED
         # infinite test loop, stops with Ctrl-C
         while True:
             t0_loop = time.time()
@@ -100,7 +181,7 @@ class NaoSoccer:
                 # print("Ball distance estimation :", ball_distance)
 
                 target_x = width / 2  # center the ball horizontally
-                target_y = height - self.ball_target_security_factor * (2 * ball_radius)  # bottom the ball vertically
+                target_y = height - 1.5 * (2 * ball_radius)  # bottom the ball vertically
 
                 head_ball_changes = self.changes_from_pixel(target_x, target_y, bx, by)
                 self.ball_yaw_error = head_ball_changes[0]
@@ -160,9 +241,3 @@ class NaoSoccer:
             # Let's move!
             self.motion_proxy.changeAngles(self.angle_names, changes, self.head_fraction_max_speed)
             self.motion_proxy.moveToward(dx_factor, dy_factor, d_yaw_factor, [["Frequency", self.body_step_frequency]])
-
-            time_left = self.dt - (time.time() - t0_loop)
-            if time_left > 0:
-                time.sleep(time_left)
-            else:
-                print("Out of time...")
