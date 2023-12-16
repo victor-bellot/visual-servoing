@@ -5,6 +5,11 @@ from nao_soccer import NaoSoccer
 
 
 # functions (actions of the FSM)
+def do_start_over():
+    time.sleep(1.0)
+    return 'ready'
+
+
 def do_ball_search():
     if nao.ball_found():
         return 'ball_found'
@@ -14,16 +19,45 @@ def do_ball_search():
 
 
 def do_ball_track():
-    # TODO : add a 'looking at the ball' condition
-    width, height = nao.get_image_dimension()
-    ball_radius = nao.get_ball_radius()
+    if nao.ball_found():
+        if nao.ball_in_sight():
+            return 'ball_tracked'
+        else:
+            nao.head_align_body()
+            nao.track_ball()
+            nao.move()
+            return 'ball_not_tracked'
+    else:
+        return 'error'
 
-    target_x = width / 2  # center the ball horizontally
-    target_y = height - 3 * ball_radius  # bottom the ball
 
-    nao.track_ball(target_x, target_y)
+def do_ball_reach():
+    if nao.ball_found():
+        if nao.ball_reached():
+            return 'ball_reached'
+        else:
+            nao.head_align_body()
+            nao.track_ball()
+            nao.reach_ball()
+            nao.move()
+            return 'ball_not_reached'
+    else:
+        return 'error'
 
-    return 'not_looking_at_the_ball' or 'looking_at_the_ball'
+
+def do_goal_search():
+    if nao.ball_found():
+        if nao.goal_found():
+            return 'goal_found'
+        else:
+            nao.head_align_body()
+            nao.track_ball()
+            nao.reach_ball()
+            nao.search_goal()
+            nao.move()
+            return 'goal_not_found'
+    else:
+        return 'error'
 
 
 def do_stop():
@@ -64,12 +98,12 @@ if __name__ == "__main__":
     running = True
     while running:
         t_loop = time.time()
-
         nao.reset()  # reset the Nao Soccer before each action
+
         action = fsm.run()  # action to be executed in the new state
         next_event = action()  # new event when state action is finished
+
         if fsm.current_state != fsm.end_state:
-            print("New Event : ", next_event)
             fsm.set_event(next_event)  # set new event for next transition
         else:
             running = False

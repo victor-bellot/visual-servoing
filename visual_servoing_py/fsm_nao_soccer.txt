@@ -2,19 +2,38 @@
 Idle
 BallSearch
 BallTrack
+BallReach
+GoalSearch
 End
 ----- Transitions
+# Reset transition
 Idle BallSearch ready do_ball_search
+# Searching the ball...
 BallSearch BallSearch ball_not_found do_ball_search
 BallSearch BallTrack ball_found do_ball_track
-BallTrack BallTrack not_looking_at_the_ball do_ball_track
-BallTrack End looking_at_the_ball do_stop
+# Tracking the ball...
+BallTrack Idle error do_start_over
+BallTrack BallTrack ball_not_tracked do_ball_track
+BallTrack BallReach ball_tracked do_ball_reach
+# Reaching the ball...
+BallReach Idle error do_start_over
+BallReach BallReach ball_not_reached do_ball_reach
+BallReach GoalSearch ball_reached do_goal_search
+# Searching the goal...
+GoalSearch Idle error do_start_over
+GoalSearch GoalSearch goal_not_found do_goal_search
+GoalSearch End goal_found do_stop
 ----- Events
 ready
 ball_not_found
 ball_found
-not_looking_at_the_ball
-looking_at_the_ball
+ball_not_tracked
+ball_tracked
+ball_not_reached
+ball_reached
+goal_not_found
+goal_found
+error
 ---- Start State
 Idle
 ---- Start Event

@@ -63,3 +63,7 @@ def detect_goal(image):
 
 def bound(value, ceil=1.0):
     return max(-ceil, min(value, +ceil))
+
+
+def norm(x, y):
+    return np.sqrt(x * x + y * y)
