@@ -38,7 +38,7 @@ def detect_ball(image, real=False):
 
         cx, cy = contour_center(ball_contour)
 
-        return r_ball, int(cx), int(cy)  # return distance_to_ball, x & y components of the ball's center in pixels
+        return r_ball, cx, cy  # return distance_to_ball, x & y components of the ball's center in pixels
     else:
         return None, None, None
 
@@ -54,11 +54,24 @@ def detect_goal(image):
     # Create a mask to isolate red regions
     mask = cv2.inRange(hsv, lower_red, upper_red)
 
-    if np.any(mask > 0):
-        cx, cy = np.mean(np.where(mask > 0), axis=1)
-        return True, cx, cy
-    else:
-        return False, None, None
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    lst_cx, lst_cy = [], []
+    if len(contours) >= 2:
+        lst_centers = [contour_center(contour) for contour in contours]
+        lst_cx, lst_cy = zip(*lst_centers)
+
+
+        max_cx = max(lst_cx)
+        min_cx = min(lst_cx)
+        if max_cx - min_cx > 100:
+            c1 = lst_cx.index(max_cx)
+            c2 = lst_cx.index(min_cx)
+            ptx = abs(lst_cx[c1] + lst_cx[c2]) / 2
+            pty = abs(lst_cy[c1] + lst_cy[c2]) / 2
+            return True, pty, ptx
+    return False, None, None
 
 
 def bound(value, ceil=1.0):
