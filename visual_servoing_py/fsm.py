@@ -26,8 +26,10 @@ class Fsm:
         fsm_file = open(file_fsm)
         mode = None
         for line in fsm_file.readlines():
-            line = line[0:-1]  # remove cr
-            if line.startswith("----- States"):
+            line = line[0:-1]  # remove line break
+            if line.startswith('#'):
+                continue
+            elif line.startswith("----- States"):
                 mode = "st"
             elif line.startswith("----- Events"):
                 mode = "ev"

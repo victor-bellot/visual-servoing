@@ -1,14 +1,42 @@
 ----- States
-Start
+Idle
+BallSearch
+BallTrack
+BallReach
+GoalSearch
 End
 ----- Transitions
-Start End run do_mission
+# Reset transition
+Idle BallSearch ready do_ball_search
+# Searching the ball...
+BallSearch BallSearch ball_not_found do_ball_search
+BallSearch BallTrack ball_found do_ball_track
+# Tracking the ball...
+BallTrack Idle error do_start_over
+BallTrack BallTrack ball_not_tracked do_ball_track
+BallTrack BallReach ball_tracked do_ball_reach
+# Reaching the ball...
+BallReach Idle error do_start_over
+BallReach BallReach ball_not_reached do_ball_reach
+BallReach GoalSearch ball_reached do_goal_search
+# Searching the goal...
+GoalSearch Idle error do_start_over
+GoalSearch GoalSearch goal_not_found do_goal_search
+GoalSearch End goal_found do_stop
 ----- Events
-run
-done
+ready
+ball_not_found
+ball_found
+ball_not_tracked
+ball_tracked
+ball_not_reached
+ball_reached
+goal_not_found
+goal_found
+error
 ---- Start State
-Start
+Idle
 ---- Start Event
-run
+ready
 ---- End State
 End

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def contour_center(contour):
+def contour_center(contour):  # list of points (x, y)
     return np.mean(contour[:, :, 0]), np.mean(contour[:, :, 1])
 
 
@@ -76,3 +76,7 @@ def detect_goal(image):
 
 def bound(value, ceil=1.0):
     return max(-ceil, min(value, +ceil))
+
+
+def norm(x, y):
+    return np.sqrt(x * x + y * y)
