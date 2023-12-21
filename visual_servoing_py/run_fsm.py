@@ -57,19 +57,38 @@ def do_goal_search():
             nao.move()
             return 'goal_not_found'
     else:
-        return 'goal_not_found'  # 'error'
+        return 'error'
 
 
-def do_shoot():
-    if nao.goal_found():
-        if nao.shoot_done():
-            return 'shoot_done'
+def do_alignment():
+    if nao.ball_found():
+        if nao.goal_found():
+            if nao.ball_goal_aligned():
+                return 'aligned'
+            else:
+                nao.head_align_body()
+                nao.align_ball_goal()
+                nao.move()
+                return 'not_aligned'
         else:
-            nao.shoot()
-            nao.move()
-            return 'shoot_not_done'
+                nao.head_align_body()
+                nao.track_ball()
+                nao.reach_ball()
+                nao.search_goal()
+                nao.move()
+                return 'goal_not_found'
     else:
-        return 'goal_not_found'
+        return 'error'
+
+
+def do_shot():  
+    # move forward blindly
+    if nao.shot_done():
+        return 'ball_shot'
+    else:
+        nao.shoot()
+        nao.move()
+        return 'ball_not_shot'
 
 
 def do_stop():

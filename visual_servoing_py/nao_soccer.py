@@ -32,7 +32,7 @@ class NaoSoccer:
 
         # Alignment maximum angles
         self.body_head_accuracy = np.pi / 16.  # in radians
-        self.head_ball_goal_min_error = np.pi / 32.  # in radians
+        self.head_ball_goal_min_error = np.pi / 64.  # in radians
         self.ball_distance_accuracy = 0.05
 
         self.desired_dist_to_ball = 0.8
@@ -97,10 +97,12 @@ class NaoSoccer:
         self.goal_detected = None
         self.goal_position = (0, 0)  # pixel (x, y) on image
 
+        # define ball-goal alignment variables
+        # self.head_ball_goal_min_error = np.pi / 32
+        self.ball_goal_align_err = 0.
+
         # Define shoot variables
-        self.ball_shooted = False
-        self.distance_ball_shooted = 2  # distance far enough to say the ball was shooted
-        self.allow_camera_bottom = False
+        self.distance_ball_shot = 2  # distance far enough to say the ball was shooted
 
         # Define motion variables
         self.motion = {
@@ -182,15 +184,6 @@ class NaoSoccer:
 
         return self.goal_updated
 
-    def update_shoot(self):
-        dist = self.get_ball_distance()
-        self.shoot_updated = True
-        if dist < self.distance_ball_shooted:
-            self.ball_shooted = False
-        else:
-            self.ball_shooted = True
-
-        return self.shoot_updated
 
     """ GETTER & CONDITION METHODS """
 
@@ -234,9 +227,16 @@ class NaoSoccer:
             return self.goal_detected
         return False
 
-    def shoot_done(self):
-        if self.update_shoot():
-            return self.ball_shooted
+    def ball_goal_aligned(self):
+        if self.ball_goal_align_err < self.head_ball_goal_min_error:
+            return True
+        return False
+
+    def shot_done(self):
+        dist = 0.
+        dist = self.get_ball_distance()
+        if dist > self.distance_ball_shot:
+            return True
         return False
 
 
@@ -284,8 +284,11 @@ class NaoSoccer:
     def search_goal(self):
         self.add_motion('body_y', self.walking_search_factor)
 
+    def align_ball_goal(self):
+        self.ball_goal_align_err, _ = self.changes_from_pixel(self.goal_position[0], self.goal_position[1], *self.ball_position)
+        self.add_motion('body_y', sign(align_err) * self.walking_search_factor)
+
     def shoot(self):
         # go forward with regulation during shoot_duration seconds
-        self.allow_camera_bottom = True
         self.add_motion('body_x', self.walking_search_factor)
         
