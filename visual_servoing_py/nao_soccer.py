@@ -97,6 +97,11 @@ class NaoSoccer:
         self.goal_detected = None
         self.goal_position = (0, 0)  # pixel (x, y) on image
 
+        # Define shoot variables
+        self.ball_shooted = False
+        self.distance_ball_shooted = 2  # distance far enough to say the ball was shooted
+        self.allow_camera_bottom = False
+
         # Define motion variables
         self.motion = {
             'head_yaw': 0.,
@@ -177,6 +182,16 @@ class NaoSoccer:
 
         return self.goal_updated
 
+    def update_shoot(self):
+        dist = self.get_ball_distance()
+        self.shoot_updated = True
+        if dist < self.distance_ball_shooted:
+            self.ball_shooted = False
+        else:
+            self.ball_shooted = True
+
+        return self.shoot_updated
+
     """ GETTER & CONDITION METHODS """
 
     def ball_found(self):
@@ -218,6 +233,12 @@ class NaoSoccer:
         if self.update_goal():
             return self.goal_detected
         return False
+
+    def shoot_done(self):
+        if self.update_shoot():
+            return self.ball_shooted
+        return False
+
 
     """ MOTION METHODS """
 
@@ -262,3 +283,9 @@ class NaoSoccer:
 
     def search_goal(self):
         self.add_motion('body_y', self.walking_search_factor)
+
+    def shoot(self):
+        # go forward with regulation during shoot_duration seconds
+        self.allow_camera_bottom = True
+        self.add_motion('body_x', self.walking_search_factor)
+        

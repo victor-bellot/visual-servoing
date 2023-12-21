@@ -57,7 +57,19 @@ def do_goal_search():
             nao.move()
             return 'goal_not_found'
     else:
-        return 'error'
+        return 'goal_not_found'  # 'error'
+
+
+def do_shoot():
+    if nao.goal_found():
+        if nao.shoot_done():
+            return 'shoot_done'
+        else:
+            nao.shoot()
+            nao.move()
+            return 'shoot_not_done'
+    else:
+        return 'goal_not_found'
 
 
 def do_stop():

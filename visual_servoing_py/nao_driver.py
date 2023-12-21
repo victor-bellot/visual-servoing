@@ -182,20 +182,21 @@ class NaoDriver:
         """ return the current camera. 0: Top , 1: Bottom"""
         return self.__cam_num
 
-    def change_camera(self, cam_num):
+    def change_camera (self, cam_num):
         """ Change NAO's active camera. cam_num = 0 : top camera, cam_num = 1 : bottom camera """
         self.__cam_num = cam_num
         if self.vnao:
             if self.__cam_num == 0:
-                self.__vnao_image = "out_%5.5d.ppm" % (self.__nao_port)
+                self.__vnao_image = "out_%5.5d.ppm"%(self.__nao_port)
             else:
-                self.__vnao_image = "out_down_%5.5d.ppm" % (self.__nao_port)
-            self.__camera_image = os.path.join(self.__vnao_path, self.__vnao_image)
-            print("virtual nao image", self.__vnao_camera_image)
-        else:
+                self.__vnao_image = "out_down_%5.5d.ppm"%(self.__nao_port)
+            self.__vnao_camera_image=os.path.join(self.__vnao_path,self.__vnao_image)
+            print ("virtual nao image",self.__vnao_camera_image)    
+            print "Active camera is",self.__cam_num
+        else:   
             self.camera_proxy.setActiveCamera(self.__cam_num)
             self.__set_camera_subscriber()
-        print("Active camera is", self.camera_proxy.getActiveCamera())
+            print "Active camera is",self.camera_proxy.getActiveCamera()
 
     def __get_real_image(self):
         # Get a camera image.

@@ -4,6 +4,7 @@ BallSearch
 BallTrack
 BallReach
 GoalSearch
+Shoot
 End
 ----- Transitions
 # Reset transition
@@ -20,9 +21,13 @@ BallReach Idle error do_start_over
 BallReach BallReach ball_not_reached do_ball_reach
 BallReach GoalSearch ball_reached do_goal_search
 # Searching the goal...
-GoalSearch Idle error do_start_over
+# GoalSearch Idle error do_start_over
 GoalSearch GoalSearch goal_not_found do_goal_search
-GoalSearch End goal_found do_stop
+GoalSearch Shoot goal_found do_shoot
+# Shooting...
+Shoot GoalSearch goal_not_found do_goal_search
+Shoot Shoot shoot_not_done do_shoot
+Shoot End shoot_done do_stop
 ----- Events
 ready
 ball_not_found
@@ -33,6 +38,9 @@ ball_not_reached
 ball_reached
 goal_not_found
 goal_found
+shoot_not_done
+shoot_done
+
 error
 ---- Start State
 Idle
