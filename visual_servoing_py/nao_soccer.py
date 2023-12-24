@@ -13,12 +13,10 @@ class NaoSoccer:
 
         print("Initializing a NaoSoccer...")
 
-        head_turning_speed = np.pi / 32.
-
         # search for fov yaw : head_proportional_constant_yaw = dt_loop * fov_yaw / width(=320)
         # for fov pitch : head_proportional_constant_pitch = dt_loop * fov_pitch / height(=320)
         # such as deltaAngle = pixelError * proportionalConstant
-        self.head_proportional_constant = head_turning_speed / 320.
+        self.head_proportional_constant = (np.pi / 32.) / 320.
         self.body_proportional_constant = 1.0
 
         self.omega_search = 1.  # in radians per seconds
@@ -80,13 +78,13 @@ class NaoSoccer:
 
         # Define ball variables
         self.ball_updated = False
+        self.ball_pos_flt = PositionFilter()
         self.ball_radius = None
-        self.ball_position = (0, 0)  # pixel (x, y) on image
         self.ball_distance = 0
 
         # Define ball target variables
         self.target_updated = False
-        self.target_position = (0, 0)  # pixel (x, y) on image
+        self.target_pos_flt = PositionFilter()
 
         # Define head yaw variables
         self.yaw_updated = False
@@ -94,8 +92,8 @@ class NaoSoccer:
 
         # Define goal variables
         self.goal_updated = False
+        self.goal_pos_flt = PositionFilter()
         self.goal_detected = None
-        self.goal_position = (0, 0)  # pixel (x, y) on image
 
         # Define motion variables
         self.motion = {
@@ -139,7 +137,9 @@ class NaoSoccer:
 
             self.ball_updated = True
             self.ball_radius = ball_radius
-            self.ball_position = (bx, by)
+
+            if self.ball_found():
+                self.ball_pos_flt.add_position(bx, by)
 
             # Convert visual ball radius into an distance estimate
             self.ball_distance = self.r_to_d / ball_radius if ball_radius else 0.0
@@ -155,7 +155,7 @@ class NaoSoccer:
             target_y = height - 3 * ball_radius  # bottom the ball
 
             self.target_updated = True
-            self.target_position = (target_x, target_y)
+            self.target_pos_flt.add_position(target_x, target_y)
 
         return self.target_updated
 
@@ -173,7 +173,7 @@ class NaoSoccer:
 
             self.goal_updated = True
             self.goal_detected = goal_detected
-            self.goal_position = (gx, gy)
+            self.goal_pos_flt.add_position(gx, gy)
 
         return self.goal_updated
 
@@ -188,6 +188,10 @@ class NaoSoccer:
         if self.update_image():
             return self.image_dimension
 
+    def get_ball_position(self):
+        if self.ball_found():
+            return self.ball_pos_flt.eval()
+
     def get_ball_radius(self):
         if self.update_ball():
             return self.ball_radius
@@ -198,11 +202,11 @@ class NaoSoccer:
 
     def get_target_position(self):
         if self.update_target():
-            return self.target_position
+            return self.target_pos_flt.eval()
 
     def ball_in_sight(self):
         if self.update_ball() and self.update_target() and self.update_head_yaw():
-            bx, by = self.ball_position
+            bx, by = self.get_ball_position()
             target_x, target_y = self.get_target_position()
             return (norm(bx - target_x, by - target_y) < self.pixel_distance_accuracy
                     and abs(self.head_yaw) < self.body_head_accuracy)
@@ -241,8 +245,9 @@ class NaoSoccer:
 
     def track_ball(self):
         if self.update_ball() and self.update_target():
+            bx, by = self.get_ball_position()
             target_x, target_y = self.get_target_position()
-            d_head_yaw, d_head_pitch = self.changes_from_pixel(target_x, target_y, *self.ball_position)
+            d_head_yaw, d_head_pitch = self.changes_from_pixel(target_x, target_y, bx, by)
             self.add_motion('head_yaw', d_head_yaw)
             self.add_motion('head_pitch', d_head_pitch)
 

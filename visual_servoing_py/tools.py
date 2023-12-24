@@ -2,6 +2,29 @@ import cv2
 import numpy as np
 
 
+class PositionFilter:
+    def __init__(self, buffer_size=5):
+        self.buffer_size = buffer_size
+        self.buffer = np.zeros((self.buffer_size, 2))
+
+        self.head_index = 0
+        self.is_full = False
+
+    def add_position(self, x, y):
+        self.buffer[self.head_index, :] = (x, y)
+        self.head_index += 1
+        if self.head_index == self.buffer_size:
+            self.is_full = True
+            self.head_index = 0
+
+    def eval(self):
+        if self.is_full:
+            # Remove min & max and take the mean
+            return np.mean(np.sort(self.buffer, axis=0)[1:-1], axis=0)
+        else:
+            return np.median(self.buffer[:self.head_index], axis=0)
+
+
 def contour_center(contour):  # list of points (x, y)
     return np.mean(contour[:, :, 0]), np.mean(contour[:, :, 1])
 
@@ -57,20 +80,26 @@ def detect_goal(image):
     # Find contours in the mask
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    lst_cx, lst_cy = [], []
-    if len(contours) >= 2:
+    if len(contours) > 1:
+        # Compute contours centers
         lst_centers = [contour_center(contour) for contour in contours]
         lst_cx, lst_cy = zip(*lst_centers)
 
-
+        # Get the extrema along the x-axis
         max_cx = max(lst_cx)
         min_cx = min(lst_cx)
-        if max_cx - min_cx > 100:
-            c1 = lst_cx.index(max_cx)
-            c2 = lst_cx.index(min_cx)
-            ptx = abs(lst_cx[c1] + lst_cx[c2]) / 2
-            pty = abs(lst_cy[c1] + lst_cy[c2]) / 2
+
+        if max_cx - min_cx > 100.:
+            # Search min & max indices
+            k_min = lst_cx.index(max_cx)
+            k_max = lst_cx.index(min_cx)
+
+            # Compute the barycenter point of min & max
+            ptx = (lst_cx[k_min] + lst_cx[k_max]) / 2.
+            pty = (lst_cy[k_min] + lst_cy[k_max]) / 2.  # useless
+
             return True, pty, ptx
+
     return False, None, None
 
 
