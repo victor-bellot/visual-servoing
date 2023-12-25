@@ -5,11 +5,6 @@ from nao_soccer import NaoSoccer
 
 
 # functions (actions of the FSM)
-def do_start_over():
-    time.sleep(1.0)
-    return 'ready'
-
-
 def do_ball_search():
     if nao.ball_found():
         return 'ball_found'
@@ -28,7 +23,7 @@ def do_ball_track():
             nao.move()
             return 'ball_not_tracked'
     else:
-        return 'error'
+        return 'ball_not_found'
 
 
 def do_ball_reach():
@@ -42,11 +37,11 @@ def do_ball_reach():
             nao.move()
             return 'ball_not_reached'
     else:
-        return 'error'
+        return 'ball_not_found'
 
 
 def do_goal_search():
-    if nao.ball_found():
+    if nao.ball_in_sight():
         if nao.goal_found():
             return 'goal_found'
         else:
@@ -57,33 +52,29 @@ def do_goal_search():
             nao.move()
             return 'goal_not_found'
     else:
-        return 'error'
+        return 'ball_not_tracked'
 
 
 def do_alignment():
-    if nao.ball_found():
+    if nao.ball_in_sight():
         if nao.goal_found():
             if nao.ball_goal_aligned():
                 return 'aligned'
             else:
                 nao.head_align_body()
+                nao.track_ball()
+                nao.reach_ball()
                 nao.align_ball_goal()
                 nao.move()
                 return 'not_aligned'
-        else:
-                nao.head_align_body()
-                nao.track_ball()
-                nao.reach_ball()
-                nao.search_goal()
-                nao.move()
-                return 'goal_not_found'
+        return 'goal_not_found'
     else:
-        return 'error'
+        return 'ball_not_tracked'
 
 
 def do_shot():  
     # move forward blindly
-    if nao.shot_done():
+    if nao.shoot_done():
         return 'ball_shot'
     else:
         nao.shoot()
@@ -92,6 +83,7 @@ def do_shot():
 
 
 def do_stop():
+    nao.move()  # stop the robot
     return 'done'
 
 

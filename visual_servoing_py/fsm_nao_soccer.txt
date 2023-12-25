@@ -4,7 +4,7 @@ BallSearch
 BallTrack
 BallReach
 GoalSearch
-Alignement
+Alignment
 Shoot
 End
 ----- Transitions
@@ -14,24 +14,23 @@ Idle BallSearch ready do_ball_search
 BallSearch BallSearch ball_not_found do_ball_search
 BallSearch BallTrack ball_found do_ball_track
 # Tracking the ball...
-BallTrack Idle error do_start_over
+BallTrack BallSearch ball_not_found do_ball_search
 BallTrack BallTrack ball_not_tracked do_ball_track
 BallTrack BallReach ball_tracked do_ball_reach
 # Reaching the ball...
-BallReach Idle error do_start_over
+BallReach BallSearch ball_not_found do_ball_search
 BallReach BallReach ball_not_reached do_ball_reach
 BallReach GoalSearch ball_reached do_goal_search
 # Searching the goal...
-GoalSearch Idle error do_start_over
+GoalSearch BallTrack ball_not_tracked do_ball_track
 GoalSearch GoalSearch goal_not_found do_goal_search
 GoalSearch Alignment goal_found do_alignment
-# Alignement of the ball and the goal...
-Alignment Idle error do_start_over
+# Alignment of the ball and the goal...
+Alignment BallTrack ball_not_tracked do_ball_track
 Alignment GoalSearch goal_not_found do_goal_search
 Alignment Alignment not_aligned do_alignment
 Alignment Shoot aligned do_shot
 # Shooting...
-Shoot GoalSearch goal_not_found do_goal_search
 Shoot Shoot ball_not_shot do_shot
 Shoot End ball_shot do_stop
 ----- Events
@@ -48,7 +47,7 @@ not_aligned
 aligned
 ball_not_shot
 ball_shot
-error
+done
 ---- Start State
 Idle
 ---- Start Event

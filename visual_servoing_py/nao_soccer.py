@@ -1,5 +1,4 @@
 import time
-import numpy as np
 from naoqi import ALProxy
 from nao_driver import NaoDriver
 
@@ -24,17 +23,22 @@ class NaoSoccer:
         self.pitch_search = np.pi / 16.  # in radians
         self.body_to_head_factor = 1. / 10.
 
+        self.angular_velocity_ceil = np.pi / 3.  # in radians per seconds
+        self.translation_velocity_ceil = 1.  # in IDK
+
         self.head_fraction_max_speed = 0.1
         self.body_step_frequency = 1.0  # maximum step frequency
         self.walking_search_factor = 1.0  # maximum speed factor
 
         # Alignment maximum angles
         self.body_head_accuracy = np.pi / 16.  # in radians
-        self.head_ball_goal_min_error = np.pi / 64.  # in radians
+        self.head_ball_goal_min_error = 2.  # in pixels
         self.ball_distance_accuracy = 0.05
 
         self.desired_dist_to_ball = 0.8
         self.r_to_d = 16.  # such as ball_distance = r_to_d * visual_ball_radius
+
+        self.shoot_duration = 10.  # shoot duration in seconds
 
         self.angle_names = ["HeadYaw", "HeadPitch"]  # angles we want control on
         self.pixel_distance_accuracy = 20.  # in pixels
@@ -95,12 +99,11 @@ class NaoSoccer:
         self.goal_pos_flt = PositionFilter()
         self.goal_detected = None
 
-        # define ball-goal alignment variables
-        # self.head_ball_goal_min_error = np.pi / 32
+        # Define ball-goal alignment variables
         self.ball_goal_align_err = 0.
 
-        # Define shoot variables
-        self.distance_ball_shot = 2  # distance far enough to say the ball was shooted
+        # Define ball shoot variables
+        self.shoot_time = None
 
         # Define motion variables
         self.motion = {
@@ -118,10 +121,9 @@ class NaoSoccer:
         self.yaw_updated = False
         self.goal_updated = False
 
-        # Zero motions
+        # Reset motions
         for motion_name in self.motion.keys():
             self.motion[motion_name] = 0.
-        self.move()
 
     def changes_from_pixel(self, tx, ty, px, py):
         return [self.head_proportional_constant * error for error in (tx - px, py - ty)]
@@ -184,7 +186,6 @@ class NaoSoccer:
 
         return self.goal_updated
 
-
     """ GETTER & CONDITION METHODS """
 
     def ball_found(self):
@@ -232,17 +233,14 @@ class NaoSoccer:
         return False
 
     def ball_goal_aligned(self):
-        if self.ball_goal_align_err < self.head_ball_goal_min_error:
-            return True
+        if self.update_ball() and self.update_goal():
+            bx, _ = self.get_ball_position()
+            gx, _ = self.get_target_position()
+            return abs(gx - bx) < self.head_ball_goal_min_error
         return False
 
-    def shot_done(self):
-        dist = 0.
-        dist = self.get_ball_distance()
-        if dist > self.distance_ball_shot:
-            return True
-        return False
-
+    def shoot_done(self):
+        return time.time() - self.shoot_time > self.shoot_duration if self.shoot_time else False
 
     """ MOTION METHODS """
 
@@ -250,10 +248,10 @@ class NaoSoccer:
         self.motion[key] += value
 
     def move(self):
-        head_changes = [self.motion['head_yaw'], self.motion['head_pitch']]
-        d_body_x = self.motion['body_x']
-        d_body_y = self.motion['body_y']
-        d_body_yaw = self.motion['body_yaw']
+        head_changes = [bound(self.motion[key], self.angular_velocity_ceil) for key in ('head_yaw', 'head_pitch')]
+        d_body_x = bound(self.motion['body_x'], self.translation_velocity_ceil)
+        d_body_y = bound(self.motion['body_y'], self.translation_velocity_ceil)
+        d_body_yaw = bound(self.motion['body_yaw'], self.angular_velocity_ceil)
 
         self.motion_proxy.changeAngles(self.angle_names, head_changes, self.head_fraction_max_speed)
         self.motion_proxy.moveToward(d_body_x, d_body_y, d_body_yaw, [["Frequency", self.body_step_frequency]])
@@ -290,10 +288,12 @@ class NaoSoccer:
         self.add_motion('body_y', self.walking_search_factor)
 
     def align_ball_goal(self):
-        self.ball_goal_align_err, _ = self.changes_from_pixel(self.goal_position[0], self.goal_position[1], *self.ball_position)
-        self.add_motion('body_y', sign(align_err) * self.walking_search_factor)
+        if self.update_ball() and self.update_goal():
+            bx, _ = self.get_ball_position()
+            gx, _ = self.get_target_position()
+            self.add_motion('body_y', np.sign(gx - bx) * self.walking_search_factor)
 
     def shoot(self):
-        # go forward with regulation during shoot_duration seconds
+        if self.shoot_time is None:
+            self.shoot_time = time.time()
         self.add_motion('body_x', self.walking_search_factor)
-        
