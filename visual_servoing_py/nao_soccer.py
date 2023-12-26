@@ -32,16 +32,16 @@ class NaoSoccer:
 
         # Alignment maximum angles
         self.body_head_accuracy = np.pi / 16.  # in radians
-        self.head_ball_goal_min_error = 2.  # in pixels
+        self.head_ball_goal_min_error = 10.  # in pixels
         self.ball_distance_accuracy = 0.05
 
-        self.desired_dist_to_ball = 0.8
+        self.desired_dist_to_ball = 0.9
         self.r_to_d = 16.  # such as ball_distance = r_to_d * visual_ball_radius
 
         self.shoot_duration = 10.  # shoot duration in seconds
 
         self.angle_names = ["HeadYaw", "HeadPitch"]  # angles we want control on
-        self.pixel_distance_accuracy = 20.  # in pixels
+        self.pixel_distance_accuracy = 10.  # in pixels
 
         try:
             self.motion_proxy = ALProxy("ALMotion", robot_ip, robot_port)
@@ -99,9 +99,6 @@ class NaoSoccer:
         self.goal_pos_flt = PositionFilter()
         self.goal_detected = None
 
-        # Define ball-goal alignment variables
-        self.ball_goal_align_err = 0.
-
         # Define ball shoot variables
         self.shoot_time = None
 
@@ -147,11 +144,11 @@ class NaoSoccer:
             self.ball_updated = True
             self.ball_radius = ball_radius
 
-            if self.ball_found():
-                self.ball_pos_flt.add_position(bx, by)
-
             # Convert visual ball radius into an distance estimate
             self.ball_distance = self.r_to_d / ball_radius if ball_radius else 0.0
+
+            if self.ball_found():
+                self.ball_pos_flt.add_position(bx, by)
 
         return self.ball_updated
 
@@ -202,11 +199,11 @@ class NaoSoccer:
             return self.ball_pos_flt.eval()
 
     def get_ball_radius(self):
-        if self.update_ball():
+        if self.ball_found():
             return self.ball_radius
 
     def get_ball_distance(self):
-        if self.update_ball():
+        if self.ball_found():
             return self.ball_distance
 
     def get_target_position(self):
@@ -214,7 +211,7 @@ class NaoSoccer:
             return self.target_pos_flt.eval()
 
     def ball_in_sight(self):
-        if self.update_ball() and self.update_target() and self.update_head_yaw():
+        if self.ball_found() and self.update_target() and self.update_head_yaw():
             bx, by = self.get_ball_position()
             target_x, target_y = self.get_target_position()
             return (norm(bx - target_x, by - target_y) < self.pixel_distance_accuracy
@@ -232,10 +229,14 @@ class NaoSoccer:
             return self.goal_detected
         return False
 
+    def get_goal_position(self):
+        if self.goal_found():
+            return self.goal_pos_flt.eval()
+
     def ball_goal_aligned(self):
-        if self.update_ball() and self.update_goal():
+        if self.ball_found() and self.goal_found():
             bx, _ = self.get_ball_position()
-            gx, _ = self.get_target_position()
+            gx, _ = self.get_goal_position()
             return abs(gx - bx) < self.head_ball_goal_min_error
         return False
 
@@ -290,10 +291,38 @@ class NaoSoccer:
     def align_ball_goal(self):
         if self.update_ball() and self.update_goal():
             bx, _ = self.get_ball_position()
-            gx, _ = self.get_target_position()
+            gx, _ = self.get_goal_position()
             self.add_motion('body_y', np.sign(gx - bx) * self.walking_search_factor)
 
     def shoot(self):
         if self.shoot_time is None:
             self.shoot_time = time.time()
         self.add_motion('body_x', self.walking_search_factor)
+
+    """ ANIMATION """
+
+    def stand_init(self):
+        self.posture_proxy.goToPosture("StandInit", 1.)
+
+    def dab(self, side):
+        dab_angles = {
+            "HeadYaw": 0.5 * (2 * (side == "L") - 1),
+            "HeadPitch": 0.5,
+            "LShoulderPitch": 0.5 * (side == "L"),
+            "LShoulderRoll": 1.5 - 2 * (side == "R"),
+            "LElbowYaw": 0.0,
+            "LElbowRoll": -2.0 * (side == "R"),
+            "LWristYaw": 0.0,
+            "RShoulderPitch": 0.5 * (side == "R"),
+            "RShoulderRoll": 0.5 - 2 * (side == "R"),
+            "RElbowYaw": 0.0,
+            "RElbowRoll": 2.0 * (side == "L"),
+            "RWristYaw": 0.0,
+        }
+
+        fraction_max_speed = 0.5
+        self.motion_proxy.setAngles(list(dab_angles.keys()),
+                                    list(dab_angles.values()),
+                                    fraction_max_speed)
+
+        self.motion_proxy.waitUntilMoveIsFinished()

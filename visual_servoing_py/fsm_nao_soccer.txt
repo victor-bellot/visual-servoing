@@ -5,6 +5,7 @@ BallTrack
 BallReach
 GoalSearch
 Alignment
+Wait
 Shoot
 End
 ----- Transitions
@@ -29,9 +30,11 @@ GoalSearch Alignment goal_found do_alignment
 Alignment BallTrack ball_not_tracked do_ball_track
 Alignment GoalSearch goal_not_found do_goal_search
 Alignment Alignment not_aligned do_alignment
-Alignment Shoot aligned do_shot
+Alignment Wait aligned do_wait
+# Waiting...
+Wait Shoot okay do_shoot
 # Shooting...
-Shoot Shoot ball_not_shot do_shot
+Shoot Shoot ball_not_shot do_shoot
 Shoot End ball_shot do_stop
 ----- Events
 ready

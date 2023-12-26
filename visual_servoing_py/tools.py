@@ -98,7 +98,7 @@ def detect_goal(image):
             ptx = (lst_cx[k_min] + lst_cx[k_max]) / 2.
             pty = (lst_cy[k_min] + lst_cy[k_max]) / 2.  # useless
 
-            return True, pty, ptx
+            return True, ptx, pty
 
     return False, None, None
 

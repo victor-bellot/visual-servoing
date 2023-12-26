@@ -47,7 +47,7 @@ def do_goal_search():
         else:
             nao.head_align_body()
             nao.track_ball()
-            nao.reach_ball()
+            # nao.reach_ball()
             nao.search_goal()
             nao.move()
             return 'goal_not_found'
@@ -63,7 +63,7 @@ def do_alignment():
             else:
                 nao.head_align_body()
                 nao.track_ball()
-                nao.reach_ball()
+                # nao.reach_ball()
                 nao.align_ball_goal()
                 nao.move()
                 return 'not_aligned'
@@ -72,7 +72,14 @@ def do_alignment():
         return 'ball_not_tracked'
 
 
-def do_shot():  
+def do_wait():
+    nao.move()
+    print('Waiting...')
+    time.sleep(1.0)
+    return 'okay'
+
+
+def do_shoot():
     # move forward blindly
     if nao.shoot_done():
         return 'ball_shot'
@@ -84,6 +91,12 @@ def do_shot():
 
 def do_stop():
     nao.move()  # stop the robot
+    nao.stand_init()
+    time.sleep(1.0)
+    nao.dab(side='L')
+    time.sleep(1.0)
+    nao.dab(side='R')
+    time.sleep(1.0)
     return 'done'
 
 

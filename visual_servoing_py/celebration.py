@@ -157,27 +157,25 @@ def celebration_torso():
 
 
 def celebration_dab(side="L"):
-    print("dab")
-
     dab_angles = {
-        "HeadYaw": 0.5 * (2 * (side=="L") - 1),
+        "HeadYaw": 0.5 * (2 * (side == "L") - 1),
         "HeadPitch": 0.5,
-        "LShoulderPitch": 0.5 * (side=="L"),
-        "LShoulderRoll": 1.5 - 2 * (side=="R"),
+        "LShoulderPitch": 0.5 * (side == "L"),
+        "LShoulderRoll": 1.5 - 2 * (side == "R"),
         "LElbowYaw": 0.0,
-        "LElbowRoll": -2.0 * (side=="R"),
+        "LElbowRoll": -2.0 * (side == "R"),
         "LWristYaw": 0.0,
-        "RShoulderPitch": 0.5 * (side=="R"),
-        "RShoulderRoll": 0.5 - 2 * (side=="R"),
+        "RShoulderPitch": 0.5 * (side == "R"),
+        "RShoulderRoll": 0.5 - 2 * (side == "R"),
         "RElbowYaw": 0.0,
-        "RElbowRoll": 2.0 * (side=="L"),
+        "RElbowRoll": 2.0 * (side == "L"),
         "RWristYaw": 0.0,
     }
 
-    fractionMaxSpeed = 0.5
+    fraction_max_speed = 0.5
     motionProxy.setAngles(list(dab_angles.keys()),
                           list(dab_angles.values()),
-                          fractionMaxSpeed)
+                          fraction_max_speed)
 
     motionProxy.waitUntilMoveIsFinished()
 
