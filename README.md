@@ -31,3 +31,7 @@
 - described in 'fsm_nao_soccer.txt'
 - run using 'run_fsm.py'
 - NaoSoccer's methods in the NaoSoccer class
+
+### Results
+
+Un suspens de 90s : [video](nao_goal.mp4)
