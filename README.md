@@ -20,18 +20,19 @@
 - goal_detected : boolean
 - ball center pixel
 - goal barycenter pixel
+- using a mean filter after removing extremum values
 
 ### Relations
 
 - ball_distance -> dx & dy (to get ready for shooting)
-- ball & goal position -> head & body atitude -> coupled by dy
+- ball & goal position -> head & body attitude -> coupled by dy
 
 ### Using a Finite State Machine (FSM)
 
 - described in 'fsm_nao_soccer.txt'
-- run using 'run_fsm.py'
+- run using 'run_fsm.py' by passing your virtual camera path as argument (".../nao/UE52-VS-IK/imgs"")
 - NaoSoccer's methods in the NaoSoccer class
 
 ### Results
 
-Un suspens de 90s : [video](nao_goal.mp4)
+Will it work? [video](nao_goal.mp4)

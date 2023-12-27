@@ -108,13 +108,8 @@ if __name__ == "__main__":
     fps = 10
     dt = 1. / fps
 
-    # Set your ip HERE
-    if user in 'etienne':
-        robot_ip = "localhost"
-    elif user in 'victor':
-        robot_ip = "localhost"
-    else:
-        robot_ip = None
+    # Set robot's IP
+    robot_ip = "localhost"
 
     # Set your Nao path HERE
     if user in 'etienne':
@@ -122,7 +117,7 @@ if __name__ == "__main__":
     elif user in 'victor':
         virtual_camera_path = "/home/victor/nao/UE52-VS-IK/imgs"
     else:
-        virtual_camera_path = None
+        virtual_camera_path = user
 
     fsm = Fsm()  # finite state machine
     fsm.load_fsm_from_file("fsm_nao_soccer.txt")

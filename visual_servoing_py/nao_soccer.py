@@ -35,7 +35,7 @@ class NaoSoccer:
         self.head_ball_goal_min_error = 10.  # in pixels
         self.ball_distance_accuracy = 0.05
 
-        self.desired_dist_to_ball = 0.9
+        self.desired_dist_to_ball = 0.85
         self.r_to_d = 16.  # such as ball_distance = r_to_d * visual_ball_radius
 
         self.shoot_duration = 10.  # shoot duration in seconds
