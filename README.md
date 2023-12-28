@@ -37,4 +37,4 @@
 
 ### Results
 
-Will it work? [video](nao_goal.mp4)
+Does it work? [video](nao_goal.mp4)
