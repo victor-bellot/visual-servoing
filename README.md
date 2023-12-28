@@ -33,6 +33,8 @@
 - run using 'run_fsm.py' by passing your virtual camera path as argument (".../nao/UE52-VS-IK/imgs"")
 - NaoSoccer's methods in the NaoSoccer class
 
+![](nao-soccer-fsm.png)
+
 ### Results
 
 Will it work? [video](nao_goal.mp4)
